@@ -1,0 +1,39 @@
+name: CI
+
+on:
+    push:
+    pull_request:
+    schedule:
+        - cron: '42 3 * * *'
+
+jobs:
+  test-code:
+    runs-on: ubuntu-latest
+    container:
+      image: perldocker/perl-tester:${{ matrix.perl-version }}     # https://hub.docker.com/r/perldocker/perl-tester
+    name: Perl ${{ matrix.perl-version }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.0
+          bundler-cache: true
+
+
+      - name: Create pages
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+            ruby digger.rb
+
+      - name: Commit new page
+        run: |
+            GIT_STATUS=$(git status --porcelain)
+            echo $GIT_STATUS
+            git config --global user.name 'Gabor Szabo'
+            git config --global user.email 'gabor@szabgab.com'
+            git add docs/
+            if [ "$GIT_STATUS" != "" ]; then git commit -m "Automated Web page generation"; fi
+            if [ "$GIT_STATUS" != "" ]; then git push; fi
+
