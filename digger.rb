@@ -38,10 +38,11 @@ content = '
       <thead>
         <tr>
           <th>Name</th>
-<!--
-          <th>Author</th>
-          <th>Date</th>
+          <th>Version</th>
+          <th>Authors</th>
           <th>VCS</th>
+<!--
+          <th>Date</th>
           <th>Issues</th>
           <th>CI</th>
           <th>Licenses</th>
@@ -54,7 +55,15 @@ content = '
 
 latest_data.each do|entry|
   content += '<tr>'
-  content += '<td><a href="' + (entry["metadata"]["homepage_uri"] || '') + '">' + entry["name"] + '</a></td>'
+  content += '<td><a href="' + entry["project_uri"] + '">' + entry["name"] + '</a></td>'
+  content += '<td>' + entry["version"] + '</td>'
+  content += '<td>' + entry["authors"] + '</td>'
+  source_code_uri = entry["source_code_uri"]
+  if source_code_uri.nil?
+    content +=  '<td><a class="badge badge-warning" href="/add-repo">Add repo</a></td>'
+  else
+    content += '<td><a href="' + source_code_uri  + '">repo</a></td>'
+  end
   content += '</tr>'
 
 end
