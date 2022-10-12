@@ -45,28 +45,8 @@ def collect_data()
   return latest_data
 end
 
-def generate_html(latest_data)
-  now = Time.now
-
-  content = '
-   <table class="table table-striped table-hover" id="sort_table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Version</th>
-            <th>Authors</th>
-            <th>VCS</th>
-            <th>Issues</th>
-  <!--
-            <th>Date</th>
-            <th>CI</th>
-            <th>Licenses</th>
-  -->
-          </tr>
-        </thead>
-        <tbody>
-  '
-
+def generate_table(latest_data)
+  content = ""
   latest_data.each do|entry|
     content += '<tr>'
     content += '<td><a href="' + entry["gems"]["project_uri"] + '">' + entry["gems"]["name"] + '</a></td>'
@@ -88,8 +68,33 @@ def generate_html(latest_data)
 
     content += '</tr>'
     content += "\n"
-
   end
+
+  return content
+end
+
+def generate_html(table)
+  now = Time.now
+
+  content = '
+   <table class="table table-striped table-hover" id="sort_table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Version</th>
+            <th>Authors</th>
+            <th>VCS</th>
+            <th>Issues</th>
+  <!--
+            <th>Date</th>
+            <th>CI</th>
+            <th>Licenses</th>
+  -->
+          </tr>
+        </thead>
+        <tbody>
+  '
+  content += table
 
   content += '
        </tbody>
@@ -169,5 +174,6 @@ end
 
 puts "Welcome to the Ruby Digger"
 latest_data = collect_data()
-generate_html(latest_data)
+table = generate_table(latest_data)
+generate_html(table)
 
