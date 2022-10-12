@@ -9,9 +9,6 @@ on:
 jobs:
   test-code:
     runs-on: ubuntu-latest
-    container:
-      image: perldocker/perl-tester:${{ matrix.perl-version }}     # https://hub.docker.com/r/perldocker/perl-tester
-    name: Perl ${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v2
 
