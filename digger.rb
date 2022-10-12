@@ -24,14 +24,10 @@ end
 print "raw_data: #{raw_data.length}\n" # 50 elements
 print "latest_data: #{latest_data.length}\n" # 50 elements
 
-#    puts entry["version"]
-#    puts entry["authors"]
 #    puts entry["metadata"]["changelog_uri"]
 #    puts entry["metadata"]["source_code_uri"]
 #    puts entry["project_uri"]
-#    puts entry["homepage_uri"]
 #    puts entry["source_code_uri"]
-#    puts entry["bug_tracker_uri"]
 
 content = '
  <table class="table table-striped table-hover" id="sort_table">
@@ -41,9 +37,9 @@ content = '
           <th>Version</th>
           <th>Authors</th>
           <th>VCS</th>
+          <th>Issues</th>
 <!--
           <th>Date</th>
-          <th>Issues</th>
           <th>CI</th>
           <th>Licenses</th>
           <th>Dashboard</th>
@@ -58,13 +54,33 @@ latest_data.each do|entry|
   content += '<td><a href="' + entry["project_uri"] + '">' + entry["name"] + '</a></td>'
   content += '<td>' + entry["version"] + '</td>'
   content += '<td>' + entry["authors"] + '</td>'
+
   source_code_uri = entry["source_code_uri"]
+  if source_code_uri.nil?
+    if not entry["homepage_uri"].nil? and (entry["homepage_uri"].start_with?('http://github.com/') or entry["homepage_uri"].start_with?('https://github.com/'))
+      source_code_uri = entry["homepage_uri"]
+    end
+  end
+
   if source_code_uri.nil?
     content +=  '<td><a class="badge badge-warning" href="/add-repo">Add repo</a></td>'
   else
-    content += '<td><a href="' + source_code_uri  + '">repo</a></td>'
+    repo_type = 'Other'
+    if source_code_uri.start_with?('http://github.com/') or source_code_uri.start_with?('https://github.com/')
+      repo_type = 'GitHub'
+    end
+    content += '<td><a href="' + source_code_uri  + '">' + repo_type + '</a></td>'
   end
+
+  bug_tracker_uri = entry["bug_tracker_uri"]
+  if bug_tracker_uri.nil?
+    content +=  '<td><a class="badge badge-warning" href="/add-repo">Add issues</a></td>'
+  else
+    content += '<td><a href="' + bug_tracker_uri  + '">issues</a></td>'
+  end
+
   content += '</tr>'
+  content += "\n"
 
 end
 
@@ -109,6 +125,19 @@ html = '<!doctype html>
     </nav>
 
     <div class="container" role="main">
+    <h1>Ruby Digger</h1>
+    <div>
+    Showing the most recent uploads to RubyGems.
+    <ul>
+      <li>Having the link to your public Version Control System (VCS) help others to contribute to your code.</li>
+      <li>Having an explicit link to your bugtracker/issues helps people know where to submit bug reports.</li>
+      <li>Having Continuous Integration (CI) configured helps the author catch regression and platform incompability much faster.</li>
+      <li>Having license information can help people automatically verify that they use only approved licenses.</li>
+      <!-- <li><span class="badge badge-danger">No</span> means the author does not have public VCS and does not want to have one.</li> -->
+    </ul>
+    </div>
+
+
 '
 
 html +=  content
