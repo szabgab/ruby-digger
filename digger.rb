@@ -2,17 +2,37 @@ require 'net/http'
 require 'json'
 
 puts "Welcome to the Ruby Digger"
-host = "rubygems.org"
-path = "/api/v1/activity/just_updated"
-uri = URI('https://' + host + path)
+url = "https://rubygems.org/api/v1/activity/just_updated"
+uri = URI(url)
 now = Time.now
 
 response = Net::HTTP.get_response(uri)
 if response.is_a?(Net::HTTPSuccess)
-    data = JSON[response.body]
+    raw_data = JSON[response.body]
 end
 
-# puts data.length # 50 elements
+seen = Hash.new
+latest_data = Array.new
+
+raw_data.each do|entry|
+  if not seen.key?(entry["name"])
+    seen[entry["name"]] = 1
+    latest_data.append(entry)
+  end
+end
+
+print "raw_data: #{raw_data.length}\n" # 50 elements
+print "latest_data: #{latest_data.length}\n" # 50 elements
+
+#    puts entry["version"]
+#    puts entry["authors"]
+#    puts entry["metadata"]["changelog_uri"]
+#    puts entry["metadata"]["source_code_uri"]
+#    puts entry["project_uri"]
+#    puts entry["homepage_uri"]
+#    puts entry["source_code_uri"]
+#    puts entry["bug_tracker_uri"]
+
 content = '
  <table class="table table-striped table-hover" id="sort_table">
       <thead>
@@ -32,19 +52,11 @@ content = '
       <tbody>
 '
 
-data.each do|entry|
+latest_data.each do|entry|
   content += '<tr>'
   content += '<td><a href="' + (entry["metadata"]["homepage_uri"] || '') + '">' + entry["name"] + '</a></td>'
   content += '</tr>'
 
-#    puts entry["version"]
-#    puts entry["authors"]
-#    puts entry["metadata"]["changelog_uri"]
-#    puts entry["metadata"]["source_code_uri"]
-#    puts entry["project_uri"]
-#    puts entry["homepage_uri"]
-#    puts entry["source_code_uri"]
-#    puts entry["bug_tracker_uri"]
 end
 
 content += '
