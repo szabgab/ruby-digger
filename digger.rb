@@ -17,7 +17,25 @@ latest_data = Array.new
 raw_data.each do|entry|
   if not seen.key?(entry["name"])
     seen[entry["name"]] = 1
-    latest_data.append(entry)
+
+    this = { "gems" => entry }
+
+    this["vcs_name"] = "Other"
+    source_code_uri = this["gems"]["source_code_uri"]
+    if source_code_uri.nil?
+      if not this["gems"]["homepage_uri"].nil?
+        if this["gems"]["homepage_uri"].start_with?('http://github.com/') or this["gems"]["homepage_uri"].start_with?('https://github.com/')
+          source_code_uri = this["gems"]["homepage_uri"]
+          this["vcs_name"] = "GitHub"
+        end
+      end
+    end
+
+    # TODO: entry["metadata"]["source_code_uri"]
+    # TODO: entry["project_uri"]
+    this["vcs_uri"] = source_code_uri
+
+    latest_data.append(this)
   end
 end
 
@@ -25,9 +43,6 @@ print "raw_data: #{raw_data.length}\n" # 50 elements
 print "latest_data: #{latest_data.length}\n" # 50 elements
 
 #    puts entry["metadata"]["changelog_uri"]
-#    puts entry["metadata"]["source_code_uri"]
-#    puts entry["project_uri"]
-#    puts entry["source_code_uri"]
 
 content = '
  <table class="table table-striped table-hover" id="sort_table">
@@ -42,7 +57,6 @@ content = '
           <th>Date</th>
           <th>CI</th>
           <th>Licenses</th>
-          <th>Dashboard</th>
 -->
         </tr>
       </thead>
@@ -51,28 +65,17 @@ content = '
 
 latest_data.each do|entry|
   content += '<tr>'
-  content += '<td><a href="' + entry["project_uri"] + '">' + entry["name"] + '</a></td>'
-  content += '<td>' + entry["version"] + '</td>'
-  content += '<td>' + entry["authors"] + '</td>'
+  content += '<td><a href="' + entry["gems"]["project_uri"] + '">' + entry["gems"]["name"] + '</a></td>'
+  content += '<td>' + entry["gems"]["version"] + '</td>'
+  content += '<td>' + entry["gems"]["authors"] + '</td>'
 
-  source_code_uri = entry["source_code_uri"]
-  if source_code_uri.nil?
-    if not entry["homepage_uri"].nil? and (entry["homepage_uri"].start_with?('http://github.com/') or entry["homepage_uri"].start_with?('https://github.com/'))
-      source_code_uri = entry["homepage_uri"]
-    end
-  end
-
-  if source_code_uri.nil?
+  if entry["vcs_uri"].nil?
     content +=  '<td><a class="badge badge-warning" href="/add-repo">Add repo</a></td>'
   else
-    repo_type = 'Other'
-    if source_code_uri.start_with?('http://github.com/') or source_code_uri.start_with?('https://github.com/')
-      repo_type = 'GitHub'
-    end
-    content += '<td><a href="' + source_code_uri  + '">' + repo_type + '</a></td>'
+    content += '<td><a href="' + entry["vcs_uri"]  + '">' + entry["vcs_name"] + '</a></td>'
   end
 
-  bug_tracker_uri = entry["bug_tracker_uri"]
+  bug_tracker_uri = entry["gems"]["bug_tracker_uri"]
   if bug_tracker_uri.nil?
     content +=  '<td><a class="badge badge-warning" href="/add-repo">Add issues</a></td>'
   else
