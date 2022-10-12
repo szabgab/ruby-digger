@@ -1,5 +1,38 @@
 require 'net/http'
 require 'json'
+require "pathname"
+
+def get_github(this, url)
+  puts "\n"
+  path = Pathname.new("repo").expand_path
+  if path.exist?
+    path.rmtree
+  end
+
+  uri = URI(url)
+  response = Net::HTTP.get_response(uri)
+  if not response.is_a?(Net::HTTPSuccess)
+    puts "ERROR fetching #{url}"
+    return
+  end
+
+
+  cmd = "git clone --depth 1 #{url} repo";
+  puts cmd
+  system(cmd)
+  wf = Pathname.new("repo/.github/workflows").expand_path
+  this["ci"] = nil
+  if wf.exist?
+    this["github_actions"] = 1
+    this["ci"] = 1
+  end
+
+  path = Pathname.new("repo").expand_path
+  if path.exist?
+    path.rmtree
+  end
+  return
+end
 
 def collect_data()
   url = "https://rubygems.org/api/v1/activity/just_updated"
@@ -25,8 +58,15 @@ def collect_data()
         if not this["gems"]["homepage_uri"].nil?
           if this["gems"]["homepage_uri"].start_with?('http://github.com/') or this["gems"]["homepage_uri"].start_with?('https://github.com/')
             source_code_uri = this["gems"]["homepage_uri"]
-            this["vcs_name"] = "GitHub"
           end
+        end
+      end
+      if not source_code_uri.nil?
+        if source_code_uri.start_with?('http://github.com/') or source_code_uri.start_with?('https://github.com/')
+          this["vcs_name"] = "GitHub"
+          get_github(this, source_code_uri)
+          #print(this["github_actions"])
+          #exit
         end
       end
 
@@ -66,6 +106,17 @@ def generate_table(latest_data)
       content += '<td><a href="' + bug_tracker_uri  + '">issues</a></td>'
     end
 
+    if entry["ci"].nil?
+      content +=  '<td><a class="badge badge-warning" href="/add-repo">Add CI</a></td>'
+    else
+      content += '<td>'
+      if entry["github_actions"]
+        content += "GitHub Actions<br>"
+      end
+      content += '</td>'
+    end
+
+
     content += '</tr>'
     content += "\n"
   end
@@ -85,9 +136,9 @@ def generate_html(table)
             <th>Authors</th>
             <th>VCS</th>
             <th>Issues</th>
+            <th>CI</th>
   <!--
             <th>Date</th>
-            <th>CI</th>
             <th>Licenses</th>
   -->
           </tr>
