@@ -128,12 +128,12 @@ def generate_table(latest_data)
       content += '<td><a href="' + entry["vcs_uri"]  + '">' + entry["vcs_name"] + '</a></td>'
     end
 
-    bug_tracker_uri = entry["gems"]["bug_tracker_uri"]
-    if bug_tracker_uri.nil?
-      content +=  '<td><a class="badge badge-warning" href="/add-repo">Add issues</a></td>'
-    else
-      content += '<td><a href="' + bug_tracker_uri  + '">issues</a></td>'
-    end
+    #bug_tracker_uri = entry["gems"]["bug_tracker_uri"]
+    #if bug_tracker_uri.nil?
+    #  content +=  '<td><a class="badge badge-warning" href="/add-repo">Add issues</a></td>'
+    #else
+    #  content += '<td><a href="' + bug_tracker_uri  + '">issues</a></td>'
+    #end
 
     if entry["ci"].nil?
       content +=  '<td><a class="badge badge-warning" href="/add-repo">Add CI</a></td>'
@@ -167,7 +167,7 @@ def generate_html(table)
             <th>Version</th>
             <th>Authors</th>
             <th>VCS</th>
-            <th>Issues</th>
+<!--            <th>Issues</th> -->
             <th>CI</th>
   <!--
             <th>Date</th>
