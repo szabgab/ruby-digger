@@ -20,11 +20,23 @@ def get_github(this, url)
   cmd = "git clone --depth 1 #{url} repo";
   puts cmd
   system(cmd)
-  wf = Pathname.new("repo/.github/workflows").expand_path
+
   this["ci"] = nil
+
+  wf = Pathname.new("repo/.github/workflows").expand_path
   if wf.exist?
-    this["github_actions"] = 1
-    this["ci"] = 1
+    if Dir.glob("repo/.github/workflows/*.yml").length > 0 or Dir.glob("repo/.github/workflows/*.yaml").length > 0
+      this["github_actions"] = 1
+      this["ci"] = 1
+    end
+  end
+
+  circle = Pathname.new("repo/.circleci").expand_path
+  if circle.exist?
+    if Dir.glob("repo/.circleci/*.yml").length > 0 or Dir.glob("repo/.circleci/*.yaml").length > 0
+      this["circleci"] = 1
+      this["ci"] = 1
+    end
   end
 
   path = Pathname.new("repo").expand_path
@@ -112,6 +124,9 @@ def generate_table(latest_data)
       content += '<td>'
       if entry["github_actions"]
         content += "GitHub Actions<br>"
+      end
+      if entry["circleci"]
+        content += "CircleCI<br>"
       end
       content += '</td>'
     end
