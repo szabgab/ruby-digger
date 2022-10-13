@@ -3,6 +3,8 @@ require 'json'
 require "pathname"
 
 def get_github(this, url)
+  this["ci"] = nil
+
   puts "\n"
   path = Pathname.new("repo").expand_path
   if path.exist?
@@ -13,15 +15,19 @@ def get_github(this, url)
   response = Net::HTTP.get_response(uri)
   if not response.is_a?(Net::HTTPSuccess)
     puts "ERROR fetching #{url}"
+    this["vcs_error"] = "ERROR"
     return
   end
 
 
   cmd = "git clone --depth 1 #{url} repo";
   puts cmd
-  system(cmd)
+  res = system(cmd)
+  if not res
+    this["vcs_error"] = "ERROR"
+    return
+  end
 
-  this["ci"] = nil
 
   wf = Pathname.new("repo/.github/workflows").expand_path
   if wf.exist?
@@ -46,7 +52,7 @@ def get_github(this, url)
   return
 end
 
-def collect_data()
+def collect_data(limit)
   url = "https://rubygems.org/api/v1/activity/just_updated"
   uri = URI(url)
 
@@ -87,6 +93,15 @@ def collect_data()
       this["vcs_uri"] = source_code_uri
 
       latest_data.append(this)
+      if limit.nil?
+        next
+      end
+
+      limit -= 1
+      puts limit
+      if limit <= 0
+        break
+      end
     end
   end
 
@@ -107,6 +122,8 @@ def generate_table(latest_data)
 
     if entry["vcs_uri"].nil?
       content +=  '<td><a class="badge badge-warning" href="/add-repo">Add repo</a></td>'
+    elsif entry.has_key?("vcs_error")
+      content += '<td><a href="' + entry["vcs_uri"]  + '"><span class="badge badge-danger">' + entry["vcs_name"] + '</span></a></td>'
     else
       content += '<td><a href="' + entry["vcs_uri"]  + '">' + entry["vcs_name"] + '</a></td>'
     end
@@ -239,7 +256,11 @@ def generate_html(table)
 end
 
 puts "Welcome to the Ruby Digger"
-latest_data = collect_data()
+limit = nil
+if ARGV.length > 0
+  limit = ARGV[0].to_i
+end
+latest_data = collect_data(limit)
 table = generate_table(latest_data)
 generate_html(table)
 
