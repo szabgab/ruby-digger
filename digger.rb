@@ -60,6 +60,12 @@ def save(this, outdir)
   puts "Saving '#{this["gems"]["name"]}'"
   if this["gems"]["name"].length > 2
     dir = this["gems"]["name"][0..1]
+    if /^[a-zA-Z0-9]{2}$/ !~ dir
+      puts "ERROR Unhandled name #{dir}"
+      return
+    end
+    # TODO: make directory name lower case???
+    # TODO: verify the validity of the name? [a-zA-Z0-9_-] ?
   else
     dir = "_"
   end
