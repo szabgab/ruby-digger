@@ -220,7 +220,8 @@ def main
 
   if generate
     data = read_all_json_files(outdir)
-    data.sort_by!{|item| item["gems"]["version_created_at"]}.reverse!
+    data.sort_by!{|item| item["gems"]["version_created_at"]}
+    data.reverse!
     # TODO generate statistics
     if fetched.nil? or fetched
       table = generate_table(data)
