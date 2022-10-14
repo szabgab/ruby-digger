@@ -56,13 +56,12 @@ def get_github(this, url)
   return
 end
 
-def save(this, outdir)
-  puts "Saving '#{this["gems"]["name"]}'"
+def get_path(this, outdir)
   if this["gems"]["name"].length > 2
     dir = this["gems"]["name"][0..1]
     if /^[a-zA-Z0-9]{2}$/ !~ dir
       puts "ERROR Unhandled name #{dir}"
-      return
+      return nil
     end
     # TODO: make directory name lower case???
     # TODO: verify the validity of the name? [a-zA-Z0-9_-] ?
@@ -72,7 +71,19 @@ def save(this, outdir)
   outpath = outdir + "/json/" + dir
   FileUtils.mkdir_p outpath
   outfile = outpath + "/" + this["gems"]["name"] + ".json"
+  return outfile
+end
 
+def read_json(this, outdir)
+  file_path = get_path(this, outdir)
+  return JSON[File.read(file_path)]
+end
+
+def save_json(this, outdir)
+  outfile = get_path(this, outdir)
+  return if outfile.nil?
+
+  puts "Saving '#{this["gems"]["name"]}'"
   File.write(outfile, this.to_json)
 end
 
@@ -87,47 +98,57 @@ def collect_data(limit, outdir)
 
   seen = Hash.new
   latest_data = Array.new
+  fetched_any = false
 
   raw_data.each do|entry|
-    if not seen.key?(entry["name"])
-      seen[entry["name"]] = 1
+    fetched_this = false
+    if seen.key?(entry["name"])
+      next
+    end
 
-      this = { "gems" => entry }
+    seen[entry["name"]] = 1
 
-      this["vcs_name"] = "Other"
-      source_code_uri = this["gems"]["source_code_uri"]
-      if source_code_uri.nil?
-        if not this["gems"]["homepage_uri"].nil?
-          if this["gems"]["homepage_uri"].start_with?('http://github.com/') or this["gems"]["homepage_uri"].start_with?('https://github.com/')
-            source_code_uri = this["gems"]["homepage_uri"]
-          end
+    this = { "gems" => entry }
+
+    this["vcs_name"] = "Other"
+    source_code_uri = this["gems"]["source_code_uri"]
+    if source_code_uri.nil?
+      if not this["gems"]["homepage_uri"].nil?
+        if this["gems"]["homepage_uri"].start_with?('http://github.com/') or this["gems"]["homepage_uri"].start_with?('https://github.com/')
+          source_code_uri = this["gems"]["homepage_uri"]
         end
       end
-      if not source_code_uri.nil?
-        if source_code_uri.start_with?('http://github.com/') or source_code_uri.start_with?('https://github.com/')
-          this["vcs_name"] = "GitHub"
+    end
+    if not source_code_uri.nil?
+      if source_code_uri.start_with?('http://github.com/') or source_code_uri.start_with?('https://github.com/')
+        this["vcs_name"] = "GitHub"
+        old = read_json(this, outdir)
+        if not old or old["gems"]["version"] != this["gems"]["version"]
           get_github(this, source_code_uri)
-          #print(this["github_actions"])
-          #exit
+          fetched_this = true
+        else
+          next
         end
       end
+    end
 
-      # TODO: entry["metadata"]["source_code_uri"]
-      # TODO: entry["project_uri"]
-      this["vcs_uri"] = source_code_uri
-      # TODO The downloads field changes frequently so if we update data we might end up with changes to a file while only the downloads field changed.
+    next if not fetched_this
 
-      latest_data.append(this)
-      save(this, outdir)
-      if limit.nil?
-        next
-      end
+    fetched_any = true
 
-      limit -= 1
-      puts limit
-      if limit <= 0
-        break
-      end
+    # TODO: entry["metadata"]["source_code_uri"]
+    # TODO: entry["project_uri"]
+    this["vcs_uri"] = source_code_uri
+    latest_data.append(this)
+    save_json(this, outdir)
+    if limit.nil?
+      next
+    end
+
+    limit -= 1
+    puts limit
+    if limit <= 0
+      break
     end
   end
 
@@ -135,6 +156,7 @@ def collect_data(limit, outdir)
   print "latest_data: #{latest_data.length}\n" # 50 elements
 
   #    puts entry["metadata"]["changelog_uri"]
+  return fetched_any
 end
 
 def generate_table(latest_data)
@@ -152,7 +174,7 @@ def generate_html(content, outdir)
   File.write(outdir + '/index.html', html)
 end
 
-def read_json(outdir)
+def read_all_json_files(outdir)
   json_files = Dir.glob(outdir + "/json/*/*.json")
   data = []
   json_files.each do|file|
@@ -185,19 +207,22 @@ def main
     Dir.mkdir outdir
   end
 
+  fetched = nil
   if fetch
     puts "Fetch latest data"
-    collect_data(limit, outdir)
+    fetched = collect_data(limit, outdir)
   end
 
   if generate
     puts "Generate HTML"
-    data = read_json(outdir)
+    data = read_all_json_files(outdir)
     # sort data by date
     #print(data)
     # generate statistics
-    table = generate_table(data)
-    generate_html(table, outdir)
+    if fetched.nil? or fetched
+      table = generate_table(data)
+      generate_html(table, outdir)
+    end
   end
 end
 
