@@ -7,8 +7,8 @@
       <th>VCS</th>
   <!--    <th>Issues</th> -->
       <th>CI</th>
-  <!--
       <th>Date</th>
+  <!--
       <th>Licenses</th>
   -->
     </tr>
@@ -37,18 +37,20 @@
       <% end %>
 -->
 
-    <% if entry["ci"].nil? %>
-      <td><a class="badge badge-warning" href="/add-repo">Add CI</a></td>
-    <% else %>
-      <td>
-      <% if entry["github_actions"] %>
-        GitHub Actions<br>
+      <% if entry["ci"].nil? %>
+        <td><a class="badge badge-warning" href="/add-repo">Add CI</a></td>
+      <% else %>
+        <td>
+        <% if entry["github_actions"] %>
+          GitHub Actions<br>
+        <% end %>
+        <% if entry["circleci"] %>
+          CircleCI<br>
+        <% end %>
+        </td>
       <% end %>
-      <% if entry["circleci"] %>
-        CircleCI<br>
-      <% end %>
-      </td>
-    <% end %>
+
+      <td><%= entry["gems"]["version_created_at"] %></td>
 
     </tr>
   <% end %>
