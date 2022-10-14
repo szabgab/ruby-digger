@@ -115,6 +115,7 @@ def collect_data(limit, outdir)
       # TODO: entry["metadata"]["source_code_uri"]
       # TODO: entry["project_uri"]
       this["vcs_uri"] = source_code_uri
+      # TODO The downloads field changes frequently so if we update data we might end up with changes to a file while only the downloads field changed.
 
       latest_data.append(this)
       save(this, outdir)
