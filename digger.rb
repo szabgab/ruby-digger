@@ -76,15 +76,16 @@ end
 
 def read_json(this, outdir)
   file_path = get_path(this, outdir)
+  return if file_path.nil?
   return JSON[File.read(file_path)]
 end
 
 def save_json(this, outdir)
-  outfile = get_path(this, outdir)
-  return if outfile.nil?
+  file_path = get_path(this, outdir)
+  return if file_path.nil?
 
   puts "Saving '#{this["gems"]["name"]}'"
-  File.write(outfile, this.to_json)
+  File.write(file_path, this.to_json)
 end
 
 def collect_data(limit, outdir)
