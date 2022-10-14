@@ -216,9 +216,8 @@ def main
   if generate
     puts "Generate HTML"
     data = read_all_json_files(outdir)
-    # sort data by date
-    #print(data)
-    # generate statistics
+    data.sort_by!{|item| item["gems"]["version_created_at"]}.reverse!
+    # TODO generate statistics
     if fetched.nil? or fetched
       table = generate_table(data)
       generate_html(table, outdir)
