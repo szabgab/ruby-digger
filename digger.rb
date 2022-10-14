@@ -161,12 +161,14 @@ def collect_data(limit, outdir)
 end
 
 def generate_table(latest_data)
+  puts "Generate table"
   template = ERB.new(File.read('templates/list.erb'))
   content = template.result_with_hash(data: latest_data)
   return content
 end
 
 def generate_html(content, outdir)
+  puts "Generate HTML"
   now = Time.now
 
   template = ERB.new(File.read('templates/main.erb'))
@@ -176,6 +178,7 @@ def generate_html(content, outdir)
 end
 
 def read_all_json_files(outdir)
+  puts "read all json files"
   json_files = Dir.glob(outdir + "/json/*/*.json")
   data = []
   json_files.each do|file|
@@ -215,7 +218,6 @@ def main
   end
 
   if generate
-    puts "Generate HTML"
     data = read_all_json_files(outdir)
     data.sort_by!{|item| item["gems"]["version_created_at"]}.reverse!
     # TODO generate statistics
