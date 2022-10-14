@@ -1,7 +1,10 @@
 require 'net/http'
 require 'json'
-require "pathname"
-require "erb"
+require 'pathname'
+require 'erb'
+require 'optparse'
+require 'fileutils'
+
 
 def get_github(this, url)
   this["ci"] = nil
@@ -53,7 +56,21 @@ def get_github(this, url)
   return
 end
 
-def collect_data(limit)
+def save(this, outdir)
+  puts "Saving '#{this["gems"]["name"]}'"
+  if this["gems"]["name"].length > 2
+    dir = this["gems"]["name"][0..1]
+  else
+    dir = "_"
+  end
+  outpath = outdir + "/json/" + dir
+  FileUtils.mkdir_p outpath
+  outfile = outpath + "/" + this["gems"]["name"] + ".json"
+
+  File.write(outfile, this.to_json)
+end
+
+def collect_data(limit, outdir)
   url = "https://rubygems.org/api/v1/activity/just_updated"
   uri = URI(url)
 
@@ -94,6 +111,7 @@ def collect_data(limit)
       this["vcs_uri"] = source_code_uri
 
       latest_data.append(this)
+      save(this, outdir)
       if limit.nil?
         next
       end
@@ -110,7 +128,6 @@ def collect_data(limit)
   print "latest_data: #{latest_data.length}\n" # 50 elements
 
   #    puts entry["metadata"]["changelog_uri"]
-  return latest_data
 end
 
 def generate_table(latest_data)
@@ -119,14 +136,8 @@ def generate_table(latest_data)
   return content
 end
 
-def generate_html(content)
+def generate_html(content, outdir)
   now = Time.now
-
-  outdir = 'docs'
-
-  if not Dir.exists? outdir
-    Dir.mkdir outdir
-  end
 
   template = ERB.new(File.read('templates/main.erb'))
   html = template.result_with_hash(timestamp: now.utc.strftime("%Y-%m-%d %H:%M:%S"), content: content)
@@ -134,12 +145,53 @@ def generate_html(content)
   File.write(outdir + '/index.html', html)
 end
 
-puts "Welcome to the Ruby Digger"
-limit = nil
-if ARGV.length > 0
-  limit = ARGV[0].to_i
-end
-latest_data = collect_data(limit)
-table = generate_table(latest_data)
-generate_html(table)
+def read_json(outdir)
+  json_files = Dir.glob(outdir + "/json/*/*.json")
+  data = []
+  json_files.each do|file|
+    data.append(JSON[File.read(file)])
+  end
+  #print(data)
 
+  return data
+end
+
+def main
+  puts "Welcome to the Ruby Digger"
+  limit = nil
+  fetch = false
+  generate = false
+  outdir = 'docs'
+
+  OptionParser.new do |opt|
+    opt.on('--fetch') { |o| fetch = true }
+    opt.on('--generate') { |o| generate = true }
+    opt.on('--limit LIMIT') { |o| limit = o.to_i }
+  end.parse!
+
+  if not fetch and not generate
+    puts "Usage #{$0} --fetch --generate [--limit N]"
+    exit 1
+  end
+
+  if not Dir.exists? outdir
+    Dir.mkdir outdir
+  end
+
+  if fetch
+    puts "Fetch latest data"
+    collect_data(limit, outdir)
+  end
+
+  if generate
+    puts "Generate HTML"
+    data = read_json(outdir)
+    # sort data by date
+    #print(data)
+    # generate statistics
+    table = generate_table(data)
+    generate_html(table, outdir)
+  end
+end
+
+main
