@@ -77,6 +77,7 @@ end
 def read_json(this, outdir)
   file_path = get_path(this, outdir)
   return if file_path.nil?
+  return if not File.exists?(file_path)
   return JSON[File.read(file_path)]
 end
 
