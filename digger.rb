@@ -114,76 +114,13 @@ def collect_data(limit)
 end
 
 def generate_table(latest_data)
-  content = ""
-  latest_data.each do|entry|
-    content += '<tr>'
-    content += '<td><a href="' + entry["gems"]["project_uri"] + '">' + entry["gems"]["name"] + '</a></td>'
-    content += '<td>' + entry["gems"]["version"] + '</td>'
-    content += '<td>' + entry["gems"]["authors"] + '</td>'
-
-    if entry["vcs_uri"].nil?
-      content +=  '<td><a class="badge badge-warning" href="/add-repo">Add repo</a></td>'
-    elsif entry.has_key?("vcs_error")
-      content += '<td><a href="' + entry["vcs_uri"]  + '"><span class="badge badge-danger">' + entry["vcs_name"] + '</span></a></td>'
-    else
-      content += '<td><a href="' + entry["vcs_uri"]  + '">' + entry["vcs_name"] + '</a></td>'
-    end
-
-    #bug_tracker_uri = entry["gems"]["bug_tracker_uri"]
-    #if bug_tracker_uri.nil?
-    #  content +=  '<td><a class="badge badge-warning" href="/add-repo">Add issues</a></td>'
-    #else
-    #  content += '<td><a href="' + bug_tracker_uri  + '">issues</a></td>'
-    #end
-
-    if entry["ci"].nil?
-      content +=  '<td><a class="badge badge-warning" href="/add-repo">Add CI</a></td>'
-    else
-      content += '<td>'
-      if entry["github_actions"]
-        content += "GitHub Actions<br>"
-      end
-      if entry["circleci"]
-        content += "CircleCI<br>"
-      end
-      content += '</td>'
-    end
-
-
-    content += '</tr>'
-    content += "\n"
-  end
-
+  template = ERB.new(File.read('templates/list.erb'))
+  content = template.result_with_hash(data: latest_data)
   return content
 end
 
-def generate_html(table)
+def generate_html(content)
   now = Time.now
-
-  content = '
-   <table class="table table-striped table-hover" id="sort_table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Version</th>
-            <th>Authors</th>
-            <th>VCS</th>
-<!--            <th>Issues</th> -->
-            <th>CI</th>
-  <!--
-            <th>Date</th>
-            <th>Licenses</th>
-  -->
-          </tr>
-        </thead>
-        <tbody>
-  '
-  content += table
-
-  content += '
-       </tbody>
-      </table>
-  '
 
   outdir = 'docs'
 
