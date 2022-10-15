@@ -179,10 +179,9 @@ def save_update(outdir, updated_new, updated_again)
     updated_new: updated_new,
     updated_again: updated_again,
   }
-  fh = File.open(file_path, mode="a")
-  fh.write(data.to_json)
-  fh.write("\n")
-  fh.close
+  File.open(file_path, mode="a") do|fh|
+    fh.puts(data.to_json)
+  end
 end
 
 def generate_table(latest_data)
