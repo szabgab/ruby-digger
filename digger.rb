@@ -180,11 +180,13 @@ end
 def save_update(outdir, updated_new, updated_again)
   return if updated_new == 0 and updated_again == 0
 
+  json_files = Dir.glob(outdir + "/json/*/*.json")
   file_path = outdir + "/update.log"
   data = {
     date: Time.now,
     updated_new: updated_new,
     updated_again: updated_again,
+    total: json_files.length,
   }
   File.open(file_path, mode="a") do|fh|
     fh.puts(data.to_json)
