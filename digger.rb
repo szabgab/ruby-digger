@@ -101,6 +101,8 @@ def collect_data(limit, outdir)
   seen = Hash.new
   latest_data = Array.new
   fetched_any = false
+  updated_again = 0
+  updated_new = 0
 
   raw_data.each do|entry|
     fetched_this = false
@@ -125,9 +127,14 @@ def collect_data(limit, outdir)
       if source_code_uri.start_with?('http://github.com/') or source_code_uri.start_with?('https://github.com/')
         this["vcs_name"] = "GitHub"
         old = read_json(this, outdir)
-        if not old or old["gems"]["version"] != this["gems"]["version"]
+        if old.nil? or old["gems"]["version"] != this["gems"]["version"]
           get_github(this, source_code_uri)
           fetched_this = true
+          if old.nil?
+            updated_new += 1
+          else
+            updated_again += 1
+          end
         else
           next
         end
@@ -137,6 +144,7 @@ def collect_data(limit, outdir)
     next if not fetched_this
 
     fetched_any = true
+
 
     # TODO: entry["metadata"]["source_code_uri"]
     # TODO: entry["project_uri"]
@@ -158,7 +166,23 @@ def collect_data(limit, outdir)
   print "latest_data: #{latest_data.length}\n" # 50 elements
 
   #    puts entry["metadata"]["changelog_uri"]
+  save_update(outdir, updated_new, updated_again)
   return fetched_any
+end
+
+def save_update(outdir, updated_new, updated_again)
+  return if updated_new == 0 and updated_again == 0
+
+  file_path = outdir + "/update.log"
+  data = {
+    date: Time.now,
+    updated_new: updated_new,
+    updated_again: updated_again,
+  }
+  fh = File.open(file_path, mode="a")
+  fh.write(data.to_json)
+  fh.write("\n")
+  fh.close
 end
 
 def generate_table(latest_data)
