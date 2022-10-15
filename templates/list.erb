@@ -47,6 +47,9 @@
         <% if entry["circleci"] %>
           CircleCI<br>
         <% end %>
+        <% if entry["travis_ci"] %>
+          <span class="badge badge-warning">Travis</span><br>
+        <% end %>
         </td>
       <% end %>
 

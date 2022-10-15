@@ -49,6 +49,13 @@ def get_github(this, url)
     end
   end
 
+  travis = Pathname.new("repo/.travis.yml").expand_path
+  if travis.exist?
+    this["travis_ci"] = 1
+    this["ci"] = 1
+  end
+
+
   path = Pathname.new("repo").expand_path
   if path.exist?
     path.rmtree
