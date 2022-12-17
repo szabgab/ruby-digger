@@ -22,6 +22,7 @@ jobs:
       - name: Create pages
         if: ${{ github.event_name != 'pull_request' }}
         run: |
+            ruby --version
             ruby digger.rb --fetch --generate
 
       - name: Commit new page
